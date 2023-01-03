@@ -17,6 +17,9 @@
 #include "Common/Parser.h"
 #include "Record/MP4Reader.h"
 #include "PacketCache.h"
+#include "SimpleAMPQClient.h"
+#include "json/json.h"
+
 using namespace std;
 using namespace toolkit;
 
@@ -125,6 +128,8 @@ MediaSource::MediaSource(const string &schema, const string &vhost, const string
     _app = app;
     _stream_id = stream_id;
     _create_stamp = time(NULL);
+    _ampq_client = std::make_shared<SimpleAMPQClient>("127.0.0.1", 5672, "admin", "aaaaaa");
+    _ampq_client->declareQueue("stream-queue");
 }
 
 MediaSource::~MediaSource() {
@@ -521,6 +526,33 @@ void MediaSource::emitEvent(bool regist){
     //触发广播
     NoticeCenter::Instance().emitEvent(Broadcast::kBroadcastMediaChanged, regist, *this);
     InfoL << (regist ? "媒体注册:" : "媒体注销:") << getUrl();
+    if (_schema == "rtmp") {
+        if (regist) {
+            // RTMP注册，发送消息至Rabbitmq
+            Json::Value msgJson;
+            msgJson["type"] = "regist";
+            msgJson["host"] = "127.0.0.1";
+            msgJson["schema"] = _schema;
+            msgJson["vhost"] = _vhost;
+            msgJson["app"] = _app;
+            msgJson["stream_id"] = _stream_id;
+            std::string msg = msgJson.toStyledString();
+            _ampq_client->sendMsg(msg);
+            InfoL << "send regist msg to mq";
+        } else {
+            // RTMP注销，发送消息至Rabbitmq
+            Json::Value msgJson;
+            msgJson["type"] = "quit";
+            msgJson["host"] = "127.0.0.1";
+            msgJson["schema"] = _schema;
+            msgJson["vhost"] = _vhost;
+            msgJson["app"] = _app;
+            msgJson["stream_id"] = _stream_id;
+            std::string msg = msgJson.toStyledString();
+            _ampq_client->sendMsg(msg);
+            InfoL << "send quit msg to mq";
+        }
+    }
 }
 
 void MediaSource::regist() {

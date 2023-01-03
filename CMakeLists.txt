@@ -398,6 +398,8 @@ elseif(NOT ANDROID OR IOS)
   update_cached_list(MK_LINK_LIBRARIES pthread)
 endif()
 
+update_cached_list(MK_LINK_LIBRARIES SimpleAmqpClient)
+
 # ----------------------------------------------------------------------------
 # Solution folders:
 # ----------------------------------------------------------------------------

@@ -18,6 +18,8 @@
 #include "Network/Socket.h"
 #include "Extension/Track.h"
 #include "Record/Recorder.h"
+#include "SimpleAMPQClient.h"
+
 
 namespace toolkit {
 class Session;
@@ -403,6 +405,7 @@ private:
     std::weak_ptr<MediaSourceEvent> _listener;
     // 对象个数统计
     toolkit::ObjectStatistic<MediaSource> _statistic;
+    std::shared_ptr<SimpleAMPQClient> _ampq_client;
 };
 
 } /* namespace mediakit */
